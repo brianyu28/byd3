@@ -42,6 +42,15 @@ function drawDiscreteLineGraph(svg, coords, data, yAttrs) {
             [coords['y'] + coords['height'], coords['y']], // range, coordinate locations
             yAttrs['ticks'], coords['axisPadding']); // ticks and padding
 
+    // draw the gridlines
+    if (style('lineGraphGridlinesX'))
+        drawXGridlines(svg, xAxis, coords['height'] - 2 * coords['axisPadding'],
+                data.length, coords['y'] + coords['height'] - coords['axisPadding'], {});
+
+    if (style('lineGraphGridlinesY'))
+        drawYGridlines(svg, yAxis, coords['width'] - 2 * coords['axisPadding'],
+                yAttrs['ticks'], coords['x'] + coords['axisPadding'], {});
+
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
 
@@ -65,6 +74,14 @@ function drawLineGraph(svg, coords, data, xAttrs, yAttrs) {
             [yAttrs['min'], yAttrs['max']], // domain, possible y values
             [coords['y'] + coords['height'], coords['y']], // range, coordinate locations
             yAttrs['ticks'], coords['axisPadding']); // ticks and padding
+
+    // draw the gridlines
+    if (style('lineGraphGridlinesX'))
+        drawXGridlines(svg, xAxis, coords['height'] - 2 * coords['axisPadding'],
+                xAttrs['ticks'], coords['y'] + coords['height'] - coords['axisPadding'], {});
+    if (style('lineGraphGridlinesY'))
+        drawYGridlines(svg, yAxis, coords['width'] - 2 * coords['axisPadding'],
+                yAttrs['ticks'], coords['x'] + coords['axisPadding'], {});
 
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
@@ -93,7 +110,13 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
             [yAttrs['min'], yAttrs['max']], // domain, possible y values
             [coords['y'] + coords['height'], coords['y']], // range, coordinate locations
             yAttrs['ticks'], coords['axisPadding']); // ticks and padding
+   
+    // draw gridlines
+    if (style('barGraphGridlines'))
+        drawYGridlines(svg, yAxis, coords['width'] - 2 * coords['axisPadding'],
+                yAttrs['ticks'], coords['x'] + coords['axisPadding'], {});
 
+    // draw axes
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
 
@@ -213,16 +236,102 @@ function drawAxis(svg, axis, transformation, attributes) {
     axis.select('path')
         .style('stroke', style('axisColor'))
         .style('stroke-width', style('lineGraphAxisWidth'));
+
+    // modify CSS for ticks
+    axis.selectAll('.tick').selectAll('text')
+        .style('font-family', style('axisFont'))
+        .style('font-size', style('axisFontSize'));
 }
 
+// draws gridlines for y intervals
+function drawYGridlines(svg, axis, width, ticks, xStart, attributes) {
+    var gridlines = d3.axisRight()
+        .tickFormat('')
+        .tickSize(width)
+        .ticks(ticks)
+        .scale(axis.scale());
+
+    drawGridlines(svg, gridlines, 'translate(' + xStart + ', 0)', {});
+}
+
+function drawXGridlines(svg, axis, height, ticks, yStart, attributes) {
+    var gridlines = d3.axisTop()
+        .tickFormat('')
+        .tickSize(height)
+        .ticks(ticks)
+        .scale(axis.scale());
+
+    drawGridlines(svg, gridlines, 'translate(0, ' + yStart + ')', {});
+}
+
+function drawGridlines(svg, gridlines, transformation, attributes) {
+    var g = svg.append('g')
+        .attr('transform', transformation)
+        .call(gridlines);
+
+    g.select('.tick').remove();
+    g.select('.domain').remove();
+    // style the line
+    g.selectAll('.tick').selectAll('line')
+        .style('stroke', style('gridlineColor'));
+
+}
+
+// draws a line connecting [x, y] points in data, useful for line graphs
 function drawLinePath(svg, data, attributes) {
     var color = get(attributes, 'color', style('lineColor'));
     var strokeWidth = get(attributes, 'stroke-width', style('lineGraphLineWidth'));
+    var drawPoints = get(attributes, 'drawPoints', style('lineGraphDrawPoints'));
     svg.append('path')
         .attr('d', line(data))
         .style('stroke', color)
         .style('fill', 'none')
         .style('stroke-width', strokeWidth);
+
+    if (drawPoints) {
+        for (var i = 0; i < data.length; i++) {
+            drawPoint(svg, data[i][0], data[i][1], attributes);
+        }
+    }
+}
+
+// draws a point at (x, y)
+function drawPoint(svg, x, y, attributes) {
+    var radius = get(attributes, 'pointRadius', style('pointRadius'));
+    var innerRadius = get(attributes, 'innerPointRadius', style('innerPointRadius'));
+    var color = get(attributes, 'pointColor', style('pointColor'));
+
+    // draw the main point
+    var point = svg.append('circle')
+        .attr('cx', x)
+        .attr('cy', y)
+        .attr('r', radius)
+        .attr('fill', color);
+    
+    // if we need a hollow center, draw that
+    if (style('pointsHollowCenter')) {
+        var innerPoint = svg.append('circle')
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('r', innerRadius)
+            .attr('fill', style('white'));
+    }
+    return point;
+}
+
+/****************************
+  * Infographic Helper Functions 
+  ***************************/
+
+function addHeadline(identifier, width, text) {
+    var headline = d3.select(identifier).append('div')
+        .style('width', px(width))
+        .style('padding', px(style('headlinePadding')))
+        .style('text-align', 'center')
+        .style('font-size', px(style('headlineFontSize')))
+        .style('font-family', style('headlineFont'))
+        .text(text);
+    return headline;
 }
 
 /****************************
@@ -234,16 +343,34 @@ var stylesheet = {}
 
 // spacing
 stylesheet['padding'] = 10;
+stylesheet['headlinePadding'] = 10;
 
 // text sizes
-stylesheet['textSize'] = 12;
+stylesheet['textFontSize'] = 12;
+stylesheet['axisFontSize'] = 12;
+stylesheet['headlineFontSize'] = 24;
 
 // other sizes
 stylesheet['lineGraphLineWidth'] = 2;
 stylesheet['lineGraphAxisWidth'] = 2;
 stylesheet['barSize'] = 0.5;
+stylesheet['pointRadius'] = 4;
+stylesheet['innerPointRadius'] = 2; // size of inner hollow point for line graphs
 
-// basic colors
+// base fonts
+stylesheet['slab'] = '"Roboto Slab", serif';
+stylesheet['merriweather'] = '"Merriweather", serif';
+stylesheet['lato'] = '"Lato", sans-serif';
+stylesheet['noto'] = '"Noto Sans", sans-serif';
+
+// font choices
+stylesheet['mainFont'] = stylesheet['merriweather'];
+stylesheet['textFontSerif'] = stylesheet['merriweather'];
+stylesheet['textFontSans'] = stylesheet['lato'];
+stylesheet['axisFont'] = stylesheet['merriweather'];
+stylesheet['headlineFont'] = stylesheet['merriweather'];
+
+// base colors
 stylesheet['black'] = '#000000';
 stylesheet['white'] = '#ffffff';
 stylesheet['red'] = '#a82931';
@@ -252,11 +379,21 @@ stylesheet['blue2'] = '#7799b7';
 stylesheet['blue3'] = '#b0cfe7';
 stylesheet['green'] = '#298848';
 stylesheet['yellow'] = '#dbd300';
+stylesheet['grey1'] = '#9b9b9b';
 
 // color choices
 stylesheet['lineColor'] = stylesheet['black'];
 stylesheet['axisColor'] = stylesheet['black'];
 stylesheet['barColor'] = stylesheet['red'];
+stylesheet['pointColor'] = stylesheet['black'];
+stylesheet['gridlineColor'] = stylesheet['grey1'];
+
+// other configuration settings
+stylesheet['lineGraphDrawPoints'] = true;
+stylesheet['pointsHollowCenter'] = false; // give line graph points hollow middle
+stylesheet['lineGraphGridlinesY'] = true;
+stylesheet['lineGraphGridlinesX'] = false;
+stylesheet['barGraphGridlines'] = true;
 
 // gets the styling for a particular attribute, using defaults if nothing overriden
 function style(attribute) {

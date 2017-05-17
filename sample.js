@@ -6,10 +6,10 @@
 function sampleLineGraph() {
     data = [[2003, 5], [2004, 60], [2005, 40]];
     var coords = {
-        "x": 0,
-        "y": 0,
-        "width": 600,
-        "height": 600,
+        "x": 20,
+        "y": 20,
+        "width": 500,
+        "height": 400,
         "axisPadding": 30
     };
     var xAttrs = {
@@ -25,6 +25,7 @@ function sampleLineGraph() {
     var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
     
     var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs);
+//    var axes = drawDiscreteLineGraph(svg, coords, data, yAttrs);
 
     // add more
     data2 = [[2002, 10], [2009, 65]];
@@ -35,10 +36,10 @@ function sampleLineGraph() {
 function sampleBarGraph() {
     data = [["Red", 5], ["Blue", 8], ["Green", 13]];
     var coords = {
-        "x": 0,
-        "y": 0,
-        "width": 600,
-        "height": 600,
+        "x": 20,
+        "y": 20,
+        "width": 500,
+        "height": 500,
         "axisPadding": 30
     };
     var yAttrs = {
@@ -46,6 +47,7 @@ function sampleBarGraph() {
         "max": 20,
         "ticks": 4
     };
+    addHeadline('#graphic-area', 600, 'This is a bar graph');
     var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
     var axes = drawBarGraph(svg, coords, data, yAttrs, {});
 }
