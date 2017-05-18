@@ -128,13 +128,16 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
     // draw each bar
     barColor = get(attributes, 'color', style('barColor'));
     for (var i = 0; i < data.length; i++) {
-        svg.append('rect')
+        var bar = svg.append('rect')
             .attr('x', xAxis.scale()(data[i][0]))
             .attr('y', yAxis.scale()(data[i][1]))
             .attr('width', xAxis.scale().bandwidth())
             .attr('height', coords['y'] + coords['height']
                     - coords['axisPadding'] - yAxis.scale()(data[i][1]))
             .style('fill', barColor);
+
+        if (style('showTooltips'))
+            addTooltipToPoint(svg, bar, data[i][1], attributes);
     }
 
     return [xAxis, yAxis];
@@ -369,6 +372,7 @@ function createTooltip(svg, x, y, width, html, attributes) {
     // make sure that tooltip faces the inside of svg
     if (!toRight)
         x -= width;
+    eraseTooltip();
     var fo = svg.append('foreignObject')
         .attr('x', x)
         .attr('y', y)
@@ -388,20 +392,18 @@ function eraseTooltip() {
     d3.selectAll('.byd3-tooltip').remove();
 }
 
+// adds listener on point to create tooltip when hovered
 function addTooltipToPoint(svg, point, contents, attributes) {
-    point.on('mouseover', function() {
-        eraseTooltip();
+
+    function createTooltipAtCursor() {
         var x = d3.mouse(svg.node())[0];
         var y = d3.mouse(svg.node())[1];
         var tt = createTooltip(svg, x, y, style('tooltipWidth'), contents, attributes);
-    });
-    point.on('click', function() {
-        eraseTooltip();
-        var x = d3.mouse(svg.node())[0];
-        var y = d3.mouse(svg.node())[1];
-        var tt = createTooltip(svg, x, y, style('tooltipWidth'), contents, attributes);
-    });
-    point.on('mouseout', eraseTooltip);
+    }
+    point.on('mouseover', createTooltipAtCursor)
+        .on('mousemove', createTooltipAtCursor)
+        .on('click', createTooltipAtCursor)
+        .on('mouseout', eraseTooltip);
 }
 
 function addTooltipsToPoints(svg, points, data, attributes) {
