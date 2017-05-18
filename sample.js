@@ -8,9 +8,9 @@ function sampleLineGraph() {
     var coords = {
         "x": 20,
         "y": 20,
-        "width": 500,
-        "height": 400,
-        "axisPadding": 30
+        "width": 600,
+        "height": 500,
+        "axisPadding": 40
     };
     var xAttrs = {
         "min": 2000,
@@ -24,8 +24,9 @@ function sampleLineGraph() {
     };
     var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
     
-    var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs);
-//    var axes = drawDiscreteLineGraph(svg, coords, data, yAttrs);
+    var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs,
+//    var axes = drawDiscreteLineGraph(svg, coords, data, yAttrs,
+            {"x-label": "test", "y-label": "another test"});
 
     // add more
     data2 = [[2002, 10], [2009, 65]];
@@ -36,11 +37,11 @@ function sampleLineGraph() {
 function sampleBarGraph() {
     data = [["Red", 5], ["Blue", 8], ["Green", 13]];
     var coords = {
-        "x": 20,
-        "y": 20,
-        "width": 500,
-        "height": 500,
-        "axisPadding": 30
+        "x": 0,
+        "y": 0,
+        "width": 600,
+        "height": 600,
+        "axisPadding": 40
     };
     var yAttrs = {
         "min": 0,
@@ -49,5 +50,6 @@ function sampleBarGraph() {
     };
     addHeadline('#graphic-area', 600, 'This is a bar graph');
     var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
-    var axes = drawBarGraph(svg, coords, data, yAttrs, {});
+    var axes = drawBarGraph(svg, coords, data, yAttrs, 
+            {"x-label": "test", "y-label": "another test"});
 }

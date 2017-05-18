@@ -29,7 +29,7 @@ function createSVG(container_name, svg_name, width, height, padding) {
 // draws a line graph with discrete x categories at (x, y) with given size
 // minY and maxY should be the range of the y values, ticksY is the number of ticks
 // data should be a list of [x, y] arrays 
-function drawDiscreteLineGraph(svg, coords, data, yAttrs) {
+function drawDiscreteLineGraph(svg, coords, data, yAttrs, attributes) {
 
     // compute the axes
     var xData = data.map(function(elt) { return elt[0]; });
@@ -53,7 +53,8 @@ function drawDiscreteLineGraph(svg, coords, data, yAttrs) {
 
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
-
+    labelAxes(svg, coords, attributes);
+    
     // draw the actual line path
     if (data.length !== 0) {
         var dataLocations = computeDataLocations(data, xAxis, yAxis);
@@ -63,7 +64,7 @@ function drawDiscreteLineGraph(svg, coords, data, yAttrs) {
     return [xAxis, yAxis];
 }
 
-function drawLineGraph(svg, coords, data, xAttrs, yAttrs) {
+function drawLineGraph(svg, coords, data, xAttrs, yAttrs, attributes) {
 
     // compute the axes
     var xAxis = createLinearAxisX(
@@ -85,6 +86,7 @@ function drawLineGraph(svg, coords, data, xAttrs, yAttrs) {
 
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
+    labelAxes(svg, coords, attributes);
 
     // draw the actual line path
     if (data.length !== 0) {
@@ -119,6 +121,7 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
     // draw axes
     drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
     drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
+    labelAxes(svg, coords, attributes);
 
     // draw each bar
     barColor = get(attributes, 'color', style('barColor'));
@@ -138,6 +141,30 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
 function addLineToGraph(svg, data, axes, attributes) {
     var dataLocations = computeDataLocations(data, axes[0], axes[1]);
     drawLinePath(svg, dataLocations, attributes);
+}
+
+// labels the axes, if they are specified in the attributes of the graph
+function labelAxes(svg, coords, attributes) {
+    if ('x-label' in attributes) {
+        svg.append('text')
+            .attr('x', coords['x'] + coords['width'] / 2) 
+            .attr('y', coords['y'] + coords['height'])
+            .attr('text-anchor', 'middle')
+            .style('font-family', style('axisFont'))
+            .style('font-size', style('axisFontSize'))
+            .text(attributes['x-label']);
+    }
+
+    if ('y-label' in attributes) {
+        svg.append('text')
+            .attr('x', coords['x'] - coords['height'] / 2 - coords['axisPadding'])
+            .attr('y', coords['y'])
+            .attr('transform', 'rotate(-90)')
+            .attr('text-anchor', 'middle')
+            .style('font-family', style('axisFont'))
+            .style('font-size', style('axisFontSize'))
+            .text(attributes['y-label']);
+    }
 }
 
 /****************************

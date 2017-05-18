@@ -6,6 +6,9 @@ var crimsonStyle = {};
 
 crimsonStyle['axisFontSize'] = 14;
 
+crimsonStyle['lineGraphLineWidth'] = 4;
+crimsonStyle['lineGraphAxisWidth'] = 3;
+
 crimsonStyle['pointRadius'] = 8;
 crimsonStyle['innerPointRadius'] = 4;
 crimsonStyle['mainFont'] = stylesheet['slab'];
