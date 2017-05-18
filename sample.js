@@ -24,13 +24,13 @@ function sampleLineGraph() {
     };
     var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
     
-    var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs,
-//    var axes = drawDiscreteLineGraph(svg, coords, data, yAttrs,
+//    var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs,
+    var axes = drawDiscreteLineGraph(svg, coords, data, yAttrs,
             {"x-label": "test", "y-label": "another test"});
 
     // add more
-    data2 = [[2002, 10], [2009, 65]];
-    addLineToGraph(svg, data2, axes, {'color': style('green')});
+//    data2 = [[2002, 10], [2009, 65]];
+ //   var newPoints = addLineToGraph(svg, data2, axes, {'color': style('green')});
 
 }
 

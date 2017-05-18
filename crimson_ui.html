@@ -6,7 +6,16 @@
         <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Roboto+Slab" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Noto+Sans" rel="stylesheet">
+
+        <!-- Bootstrap and jQuery -->
+        <script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+      crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        
+        <!-- D3 and BYD3 -->
         <script src="https://d3js.org/d3.v4.min.js"></script>
         <script src="byd3.js"></script>
         <script src="crimson.js"></script> 
@@ -25,12 +34,14 @@
                 <h1>Crimson Graphics Generator</h1>
             </div>
             <hr />
-            <div class="row">
-                <div id="graphic-area">
-                </div>
-            </div>
-            <hr />
-            <div class="row">
+            <ul class="nav nav-tabs">
+              <li class="active"><a data-toggle="tab" href="#line-graph-tab">Line Graph (Continuous)</a></li>
+              <li><a data-toggle="tab" href="#bar-graph-tab">Bar Graph</a></li>
+            </ul>
+
+            <div class="tab-content">
+
+              <div id="line-graph-tab" class="tab-pane fade in active">
                 <h2>Line Graph - Continuous Data</h2>
                 <label>Data: format as (x1,y1) (x2,y2) (x3,y3) ... with spaces only between points</label>
                 <input id="generate-line-data" type="text" class="form-control" placeholder="(1, 2) (3, 4) (5, 6)">
@@ -69,7 +80,41 @@
                 <label>Line Color</label>
                 <input id="generate-line-color" type="text" class="form-control" placeholder="#a82931" value="#a82931">
                 <button id="generate-line" class="btn btn-primary">Generate</button>
+              </div>
+
+              <div id="bar-graph-tab" class="tab-pane fade">
+                <h2>Bar Graph</h2>
+                <label>Data: format as (name1,y1) (name2,y2) (name3,y3) ... with spaces only between points</label>
+                <input id="generate-bar-data" type="text" class="form-control" placeholder="(1, 2) (3, 4) (5, 6)">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>Starting Y <label>
+                        <input id="generate-bar-minY" type="text" class="form-control" placeholder="0" value="0">
+                    </div>
+                    <div class="col-sm-4">
+                        <label>Ending Y <label>
+                        <input id="generate-bar-maxY" type="text" class="form-control" placeholder="28" value="100">
+                    </div>
+                    <div class="col-sm-4">
+                        <label>Number of Y Ticks <label>
+                        <input id="generate-bar-ticksY" type="text" class="form-control" placeholder="4" value="10">
+                    </div>
+                </div>
+                <label>X Axis Label</label>
+                <input id="generate-bar-xaxis" type="text" class="form-control" placeholder="X Axis Label">
+                <label>Y Axis Label</label>
+                <input id="generate-bar-yaxis" type="text" class="form-control" placeholder="Y Axis Label">
+                <label>Bar Color</label>
+                <input id="generate-bar-color" type="text" class="form-control" placeholder="#a82931" value="#a82931">
+                <button id="generate-bar" class="btn btn-primary">Generate</button>
+              </div>
+
             </div>
+            <div class="row">
+                <div id="graphic-area">
+                </div>
+            </div>
+            <hr />
         </div>
     </body>
     <script>
@@ -85,6 +130,21 @@
             return data;
         }
 
+        function processBarData(input) {
+            pairs = input.split(') (');
+            data = [];
+            for (var i = 0; i < pairs.length; i++) {
+                pair = pairs[i];
+                if (i == 0)
+                    pair = pair.substring(1, pair.length);
+                if (i == pairs.length - 1)
+                    pair = pair.substring(0, pair.length - 1);
+                values = pair.split(',');
+                data.push([values[0], parseFloat(values[1])]);
+            }
+            return data;
+        }
+
         window.onload = function() {
             var coords = {
                 "x": 0,
@@ -93,6 +153,7 @@
                 "height": 600,
                 "axisPadding": 40
             };
+
             document.getElementById('generate-line').onclick = function() {
                 document.getElementById('graphic-area').innerHTML = '';
                 var data = document.getElementById('generate-line-data').value;
@@ -110,11 +171,27 @@
                 var yLabel = document.getElementById('generate-line-yaxis').value;
                 var color = document.getElementById('generate-line-color').value;
                 data = processData(data);
-                
-                console.log(data);
                 var svg = createSVG('#graphic-area', 'infographic', 610, 610, 10);
                 var axes = drawLineGraph(svg, coords, data, xAttrs, yAttrs, 
                         {"x-label": xLabel, "y-label": yLabel, "color": color, "pointColor": color});
+            };
+
+            document.getElementById('generate-bar').onclick = function() {
+                document.getElementById('graphic-area').innerHTML = '';
+                var data = document.getElementById('generate-bar-data').value;
+                var yAttrs = {
+                    "min": parseInt(document.getElementById('generate-bar-minY').value),
+                    "max": parseInt(document.getElementById('generate-bar-maxY').value),
+                    "ticks": parseInt(document.getElementById('generate-bar-ticksY').value)
+                };
+                var xLabel = document.getElementById('generate-bar-xaxis').value;
+                var yLabel = document.getElementById('generate-bar-yaxis').value;
+                var color = document.getElementById('generate-bar-color').value;
+                data = processBarData(data);
+                console.log(data);
+                var svg = createSVG('#graphic-area', 'infographic', 610, 610, 10);
+                var axes = drawBarGraph(svg, coords, data, yAttrs, 
+                        {"x-label": xLabel, "y-label": yLabel, "color": color});
             };
         };
     </script>

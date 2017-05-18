@@ -58,7 +58,8 @@ function drawDiscreteLineGraph(svg, coords, data, yAttrs, attributes) {
     // draw the actual line path
     if (data.length !== 0) {
         var dataLocations = computeDataLocations(data, xAxis, yAxis);
-        drawLinePath(svg, dataLocations, attributes);
+        var points = drawLinePath(svg, dataLocations, attributes);
+        addTooltipsToPoints(svg, points, data, attributes);
     }
 
     return [xAxis, yAxis];
@@ -91,7 +92,8 @@ function drawLineGraph(svg, coords, data, xAttrs, yAttrs, attributes) {
     // draw the actual line path
     if (data.length !== 0) {
         var dataLocations = computeDataLocations(data, xAxis, yAxis);
-        drawLinePath(svg, dataLocations, attributes);
+        var points = drawLinePath(svg, dataLocations, attributes);
+        addTooltipsToPoints(svg, points, data, attributes);
     }
 
     return [xAxis, yAxis];
@@ -140,7 +142,8 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
 
 function addLineToGraph(svg, data, axes, attributes) {
     var dataLocations = computeDataLocations(data, axes[0], axes[1]);
-    drawLinePath(svg, dataLocations, attributes);
+    var points = drawLinePath(svg, dataLocations, attributes);
+    return points;
 }
 
 // labels the axes, if they are specified in the attributes of the graph
@@ -309,17 +312,21 @@ function drawLinePath(svg, data, attributes) {
     var color = get(attributes, 'color', style('lineColor'));
     var strokeWidth = get(attributes, 'stroke-width', style('lineGraphLineWidth'));
     var drawPoints = get(attributes, 'drawPoints', style('lineGraphDrawPoints'));
+
     svg.append('path')
         .attr('d', line(data))
         .style('stroke', color)
         .style('fill', 'none')
         .style('stroke-width', strokeWidth);
 
+    var points = [];
     if (drawPoints) {
         for (var i = 0; i < data.length; i++) {
-            drawPoint(svg, data[i][0], data[i][1], attributes);
+            var point = drawPoint(svg, data[i][0], data[i][1], attributes);
+            points.push(point);
         }
     }
+    return points;
 }
 
 // draws a point at (x, y)
@@ -327,6 +334,7 @@ function drawPoint(svg, x, y, attributes) {
     var radius = get(attributes, 'pointRadius', style('pointRadius'));
     var innerRadius = get(attributes, 'innerPointRadius', style('innerPointRadius'));
     var color = get(attributes, 'pointColor', style('pointColor'));
+    var tooltipContents = get(attributes, 'tooltipContents', null);
 
     // draw the main point
     var point = svg.append('circle')
@@ -341,9 +349,83 @@ function drawPoint(svg, x, y, attributes) {
             .attr('cx', x)
             .attr('cy', y)
             .attr('r', innerRadius)
-            .attr('fill', style('white'));
+            .attr('fill', style('white'))
+            .style('pointer-events', 'none');
     }
+
+    // take care of tooltip
+    if (tooltipContents != null)
+        addTooltipToPoint(svg, point, tooltipContents, attributes);
     return point;
+}
+
+function createTooltip(svg, x, y, width, html, attributes) {
+    var color = get(attributes, 'tooltipColor', style('tooltipColor'));
+    var talign = get(attributes, 'tooltipAlign', style('tooltipAlign'));
+    
+    // compute if should go right or left
+    var toRight = x < (pxtonum(svg.style('width')) / 2);
+
+    // make sure that tooltip faces the inside of svg
+    if (!toRight)
+        x -= width;
+    var fo = svg.append('foreignObject')
+        .attr('x', x)
+        .attr('y', y)
+        .attr('class', 'byd3-tooltip')
+        .attr('width', width);
+    fo.append('xhtml:div')
+        .style('border-radius', px(style('tooltipBorderRadius')))
+        .style('padding', px(style('tooltipPadding')))
+        .style('text-align', talign)
+        .style('width', width)
+        .style('font-family', style('tooltipFont'))
+        .style('background-color', color)
+        .html(html);
+}
+
+function eraseTooltip() {
+    d3.selectAll('.byd3-tooltip').remove();
+}
+
+function addTooltipToPoint(svg, point, contents, attributes) {
+    point.on('mouseover', function() {
+        eraseTooltip();
+        var x = d3.mouse(svg.node())[0];
+        var y = d3.mouse(svg.node())[1];
+        var tt = createTooltip(svg, x, y, style('tooltipWidth'), contents, attributes);
+    });
+    point.on('click', function() {
+        eraseTooltip();
+        var x = d3.mouse(svg.node())[0];
+        var y = d3.mouse(svg.node())[1];
+        var tt = createTooltip(svg, x, y, style('tooltipWidth'), contents, attributes);
+    });
+    point.on('mouseout', eraseTooltip);
+}
+
+function addTooltipsToPoints(svg, points, data, attributes) {
+    var tooltipFunction = get(attributes, 'tooltipFunction', null);
+    var xLabel = get(attributes, 'x-label', null);
+    var yLabel = get(attributes, 'y-label', null);
+    for (var i = 0; i < points.length; i++) {
+    
+        var content; // contents of the tooltip
+        if (tooltipFunction !== null) // custom function for computing inside
+            content = tooltipFunction(data[i]);
+        else { // compute tooltip contents just by default
+            var content = '';
+            if (!xLabel && !yLabel)
+                content += '(' + data[i][0] + ', ' + data[i][1] + ')';
+            if (xLabel)
+                content += xLabel + ': ' + data[i][0];
+            if (xLabel && yLabel)
+                content += '<br/>';
+            if (yLabel)
+                content += yLabel + ': ' + data[i][1];
+        }
+        addTooltipToPoint(svg, points[i], content, attributes);
+    }
 }
 
 /****************************
@@ -371,6 +453,7 @@ var stylesheet = {}
 // spacing
 stylesheet['padding'] = 10;
 stylesheet['headlinePadding'] = 10;
+stylesheet['tooltipPadding'] = 5;
 
 // text sizes
 stylesheet['textFontSize'] = 12;
@@ -383,6 +466,8 @@ stylesheet['lineGraphAxisWidth'] = 2;
 stylesheet['barSize'] = 0.5;
 stylesheet['pointRadius'] = 4;
 stylesheet['innerPointRadius'] = 2; // size of inner hollow point for line graphs
+stylesheet['tooltipBorderRadius'] = 4;
+stylesheet['tooltipWidth'] = 100;
 
 // base fonts
 stylesheet['slab'] = '"Roboto Slab", serif';
@@ -396,6 +481,7 @@ stylesheet['textFontSerif'] = stylesheet['merriweather'];
 stylesheet['textFontSans'] = stylesheet['lato'];
 stylesheet['axisFont'] = stylesheet['merriweather'];
 stylesheet['headlineFont'] = stylesheet['merriweather'];
+stylesheet['tooltipFont'] = stylesheet['lato'];
 
 // base colors
 stylesheet['black'] = '#000000';
@@ -407,6 +493,7 @@ stylesheet['blue3'] = '#b0cfe7';
 stylesheet['green'] = '#298848';
 stylesheet['yellow'] = '#dbd300';
 stylesheet['grey1'] = '#9b9b9b';
+stylesheet['grey2'] = '#c0c0c0';
 
 // color choices
 stylesheet['lineColor'] = stylesheet['black'];
@@ -414,6 +501,7 @@ stylesheet['axisColor'] = stylesheet['black'];
 stylesheet['barColor'] = stylesheet['red'];
 stylesheet['pointColor'] = stylesheet['black'];
 stylesheet['gridlineColor'] = stylesheet['grey1'];
+stylesheet['tooltipColor'] = stylesheet['grey2'];
 
 // other configuration settings
 stylesheet['lineGraphDrawPoints'] = true;
@@ -421,6 +509,8 @@ stylesheet['pointsHollowCenter'] = false; // give line graph points hollow middl
 stylesheet['lineGraphGridlinesY'] = true;
 stylesheet['lineGraphGridlinesX'] = false;
 stylesheet['barGraphGridlines'] = true;
+stylesheet['tooltipAlign'] = 'center';
+stylesheet['showTooltips'] = true;
 
 // gets the styling for a particular attribute, using defaults if nothing overriden
 function style(attribute) {
@@ -447,6 +537,10 @@ function get(arr, elt, def) {
 // converts a number N to a string 'Npx'
 function px(x) {
     return x + 'px';
+}
+
+function pxtonum(x) {
+    return parseInt(x.substring(0, x.length - 2));
 }
 
 // line function
