@@ -58,7 +58,7 @@ function drawDiscreteLineGraph(svg, coords, data, yAttrs, attributes) {
     // draw the actual line path
     if (data.length !== 0) {
         var dataLocations = computeDataLocations(data, xAxis, yAxis);
-        drawLinePath(svg, dataLocations, {});
+        drawLinePath(svg, dataLocations, attributes);
     }
 
     return [xAxis, yAxis];
@@ -91,7 +91,7 @@ function drawLineGraph(svg, coords, data, xAttrs, yAttrs, attributes) {
     // draw the actual line path
     if (data.length !== 0) {
         var dataLocations = computeDataLocations(data, xAxis, yAxis);
-        drawLinePath(svg, dataLocations, {});
+        drawLinePath(svg, dataLocations, attributes);
     }
 
     return [xAxis, yAxis];
