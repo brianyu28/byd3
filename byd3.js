@@ -143,6 +143,60 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
     return [xAxis, yAxis];
 }
 
+// multiple bar graph
+// data is an array of dictionaries
+// each dictionary contains a list of [x,y] pairs as 'data'
+// each dictionary also contains a 'color'
+function drawMultiBarGraph(svg, coords, data, yAttrs, attributes) {
+
+    // compute the axes
+    var xData = data[0]['data'].map(function(elt) { return elt[0] });
+    var xAxis = createBarAxisX(
+            xData,
+            [coords['x'], coords['x'] + coords['width']],
+            coords['axisPadding']);
+    xAxis.scale().padding(style('multiBarPadding'));
+    var yAxis = createLinearAxisY(
+            [yAttrs['min'], yAttrs['max']],
+            [coords['y'] + coords['height'], coords['y']],
+            yAttrs['ticks'], coords['axisPadding']);
+
+    // draw gridlines
+    if (style('barGraphGridlines'))
+        drawYGridlines(svg, yAxis, coords['width'] - 2 * coords['axisPadding'],
+                yAttrs['ticks'], coords['x'] + coords['axisPadding'], {});
+
+    // draw axes
+    drawAxisX(svg, xAxis, coords['y'] + coords['height'], coords['axisPadding']);
+    drawAxisY(svg, yAxis, coords['x'], coords['axisPadding']);
+    labelAxes(svg, coords, attributes);
+
+    // go through each set of bars
+    var numBars = data.length;
+    var totalBarWidth = xAxis.scale().bandwidth();
+    var eachBarWidth = totalBarWidth / numBars;
+    for (var i = 0; i < data.length; i++) {
+        var barColor = data[i]['color'];
+        var barData = data[i]['data'];
+        
+        // go through each bar in the set
+        for (var j = 0; j < barData.length; j++) {
+            var bar = svg.append('rect')
+                .attr('x', xAxis.scale()(barData[j][0]) + i * eachBarWidth)
+                .attr('y', yAxis.scale()(barData[j][1]))
+                .attr('width', eachBarWidth)
+                .attr('height', coords['y'] + coords['height']
+                        - coords['axisPadding'] - yAxis.scale()(barData[j][1]))
+                .style('fill', barColor);
+
+            if (style('showTooltips'))
+                addTooltipToPoint(svg, bar, barData[j][1], attributes);
+        }
+    }
+
+    return [xAxis, yAxis];
+}
+
 function addLineToGraph(svg, data, axes, attributes) {
     var dataLocations = computeDataLocations(data, axes[0], axes[1]);
     var points = drawLinePath(svg, dataLocations, attributes);
@@ -456,6 +510,7 @@ var stylesheet = {}
 stylesheet['padding'] = 10;
 stylesheet['headlinePadding'] = 10;
 stylesheet['tooltipPadding'] = 5;
+stylesheet['multiBarPadding'] = 0.2;
 
 // text sizes
 stylesheet['textFontSize'] = 12;
@@ -504,6 +559,7 @@ stylesheet['barColor'] = stylesheet['red'];
 stylesheet['pointColor'] = stylesheet['black'];
 stylesheet['gridlineColor'] = stylesheet['grey1'];
 stylesheet['tooltipColor'] = stylesheet['grey2'];
+stylesheet['personColor'] = stylesheet['red'];
 
 // other configuration settings
 stylesheet['lineGraphDrawPoints'] = true;
@@ -523,6 +579,63 @@ function style(attribute) {
     }
 }
 
+/****************************
+  * Other Graphics Features
+  ***************************/
+
+// draws person with head beginning at (x, y)
+function drawPerson(svg, x, y, height, attributes) {
+    var color = get(attributes, 'personColor', style('personColor'));
+    var padding = 0.05 * height;
+    var headSize = (2/7) * (height - padding);
+    var bodySize = height - padding - headSize;
+    var distToBody = (headSize / 2) + padding + (bodySize / 2);
+
+    x += headSize / 2;
+    y += headSize / 2;
+
+    var head = svg.append('circle')
+        .attr('cx', x)
+        .attr('cy', y)
+        .attr('r', headSize / 2)
+        .attr('distToBody', distToBody)
+        .attr('headSize', headSize)
+        .style('fill', color);
+
+    var body = svg.append('ellipse')
+        .attr('cx', x)
+        .attr('cy', y + distToBody)
+        .attr('rx', 1.1 * (headSize / 2))
+        .attr('ry', bodySize / 2)
+        .style('fill', color);
+
+    return [head, body];
+}
+
+function movePerson(svg, person, x, y, duration, attributes) {
+    var color = get(attributes, 'personColor', person[0].attr('fill'));
+    var delay = get(attributes, 'delay', 0);
+    
+    var headSize = parseFloat(person[0].attr('headSize'));
+
+    // move the head
+    person[0].transition()
+        .duration(duration)
+        .delay(delay)
+        .ease(d3.easeLinear)
+        .attr('cx', x + headSize / 2)
+        .attr('cy', y + headSize / 2)
+        .style('fill', color);
+
+    // move the body
+    person[1].transition()
+        .duration(duration)
+        .delay(delay)
+        .ease(d3.easeLinear)
+        .attr('cx', x + headSize / 2)
+        .attr('cy', y + headSize / 2 + parseFloat(person[0].attr('distToBody')))
+        .style('fill', color);
+}
 
 /****************************
   * Helper Functions

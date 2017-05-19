@@ -53,3 +53,42 @@ function sampleBarGraph() {
     var axes = drawBarGraph(svg, coords, data, yAttrs, 
             {"x-label": "test", "y-label": "another test"});
 }
+
+function sampleMultiBarGraph() {
+    data = [
+        {
+            "color": "#a82931",
+            "data": [["Red", 10], ["Blue", 5], ["Green", 7]]
+        },
+        {
+            "color": "#004e6a",
+            "data": [["Red", 2], ["Blue", 9], ["Green", 1]]
+        },
+        {
+            "color": "#298848",
+            "data": [["Red", 3], ["Blue", 4], ["Green", 8]]
+        }
+    ];
+
+    var coords = {
+        "x": 0,
+        "y": 0,
+        "width": 600,
+        "height": 600,
+        "axisPadding": 40
+    };
+
+    var yAttrs = {
+        "min": 0,
+        "max": 15,
+        "ticks": 5
+    };
+
+    addHeadline('#graphic-area', 600, 'This is a multiple bar graph');
+    var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
+    var axes = drawMultiBarGraph(svg, coords, data, yAttrs, 
+            {"x-label": "test", "y-label": "another test"});
+
+    var person = drawPerson(svg, 50, 50, 100, {});
+    movePerson(svg, person, 100, 100, 1000, {"personColor": "#0000ff"});
+}
