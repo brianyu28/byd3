@@ -682,7 +682,8 @@ function createPersonClusterGraph(selector, svg, data, numPeople, width, height)
 
         while (personIndex < numPeople) {
             movePerson(svg, people[personIndex],
-                    -(2 * personWidth), -(2 * personHeight), 1000, {});
+                    -(2 * personWidth), -(2 * personHeight), 1000,
+                    {'personColor': '#ffffff'});
             personIndex++;
         }
 
