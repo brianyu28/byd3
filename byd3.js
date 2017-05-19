@@ -637,6 +637,142 @@ function movePerson(svg, person, x, y, duration, attributes) {
         .style('fill', color);
 }
 
+// creates a person cluster graph of moving people
+// takes in the selector for a <select> dropdown whose values are the names of categories
+// also takes in data, which should be in the format:
+//  data is an array of dictionaries, each dictionary representing a category (page)
+//  each category dictionary as a 'name', which defines its category
+//  each category dictionary also has 'data', which is a list of dictionaries,
+//      each defining a group (grouping on same page).
+//      each group has a label 'name', 'location' [x,y] of the label
+//      'pctLocation' [x,y] of the percent, 'color' for the grouping,
+//      'value' for the number of people, 'gridLoc' [x, y] for the origin of the grid of people,
+//      'gridRows' and 'gridCols' to define the dimensions of the grid
+// numPeople defines the number of people to draw
+function createPersonClusterGraph(selector, svg, data, numPeople) {
+    
+    var personHeight = 40;
+    var personWidth = 14;
+    var people = [];
+    var labels = []; // visible, but disappear on transition
+    // draw all the data of screen  
+    for (var i = 0; i < numPeople; i++) {
+        var person = drawPerson(svg, -50, -50, personHeight, {});
+        people.push(person);
+    }
+
+    d3.select(selector).on('change', function() {
+        var selection = d3.select(selector).node().value;
+        transitionTo(selection);
+    });
+
+    function transitionTo(selection) {
+
+        // remove labels if there are any
+        for (var i = 0; i < labels.length; i++) {
+            labels[i].remove();
+        }
+        labels = [];
+
+        people = shuffle(people);
+        var personIndex = 0; // number of people already sorted
+
+        // find index of selection
+        var index = null;
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]["name"] == selection) {
+                index = i;
+                break;
+            }
+        }
+        
+        // go through that selection's data
+        var selectionData = data[index]['data']
+        for (var i = 0; i < selectionData.length; i++) {
+            var x = selectionData[i]['gridLoc'][0];
+            var y = selectionData[i]['gridLoc'][1];
+
+            // move all of the people into place
+            for (var j = 0; j < selectionData[i]['gridRows']; j++) {
+                for (var k = 0; k < selectionData[i]['gridCols']; k++) {
+                    if (j * selectionData[i]['gridCols'] + k >= selectionData[i]['value']) {
+                        // exit the loop if we've moved too many people
+                        break;
+                    }
+                    
+                    movePerson(svg, people[personIndex], x, y, 1000, 
+                            {"personColor": selectionData[i]['color']});
+                    personIndex++;
+                    x += personWidth;
+                }
+                x = selectionData[i]['gridLoc'][0];
+                y += personHeight + 5;
+            }
+
+            // print the text
+            if (selectionData[i]['location'].length !== 0) {
+                var name = svg.append('text')
+                    .attr('x', selectionData[i]['location'][0])
+                    .attr('y', selectionData[i]['location'][1])
+                    .style('font-family', style('textFontSans'))
+                    .style('font-size', 24)
+                    .style('fill', selectionData[i]['color'])
+                    .style('opacity', 0)
+                    .text(selectionData[i]['name']);
+                labels.push(name);
+                name.transition()
+                    .duration(1000)
+                    .style('opacity', 1);
+            }
+
+            // show the percentage
+            if (selectionData[i]['pctLoc'].length !== 0) {
+                var percent = svg.append('text')
+                    .attr('x', selectionData[i]['pctLoc'][0])
+                    .attr('y', selectionData[i]['pctLoc'][1])
+                    .style('font-family', style('textFontSans'))
+                    .style('font-size', 60)
+                    .style('fill', selectionData[i]['color'])
+                    .style('opacity', 0)
+                    .text(selectionData[i]['value'] + '%');
+                labels.push(percent);
+                percent.transition()
+                    .duration(1000)
+                    .style('opacity', 1);
+            }
+        }
+
+        while (personIndex < numPeople) {
+            movePerson(svg, people[personIndex], -200, -200, 1000, {});
+            personIndex++;
+        }
+
+
+    }
+    transitionTo(data[0]["name"]);
+};
+
+// shuffles an array
+// source: http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
 /****************************
   * Helper Functions
   ***************************/
