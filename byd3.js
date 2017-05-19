@@ -784,6 +784,115 @@ function createRatingChart(selector, svg, data, width, height) {
     transitionTime = 1000;
 }
 
+function createDonut(svg, x, y, r, pct, attributes) {
+    var color = get(attributes, 'donutColor', style('donutColor'));
+    var size = get(attributes, 'donutSize', 0.4); // percent of radius to show
+
+    // define the arcs for the circle and the arc
+    var innerRadius = (1 - size) * r;
+    var circle = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(r)
+        .startAngle(0)
+        .endAngle(2 * Math.PI);
+
+    var arc = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(r)
+        .startAngle(0);
+
+    // let text size be half of the inner radius
+    var textSize = (2/3) * innerRadius;
+
+    // draw the paths
+    var circlePath = svg.append('path')
+        .attr('d', circle)
+        .attr('transform', translateBy(x, y))
+        .style('fill', style('donutBgColor'));
+
+    var arcPath = svg.append('path')
+        .datum({'endAngle': (pct / 100) * (2 * Math.PI)})
+        .attr('d', arc)
+        .attr('data-r', r)
+        .attr('data-size', size)
+        .attr('transform', translateBy(x, y))
+        .style('fill', color);
+
+    var headline = svg.append('text')
+        .attr('x', x)
+        .attr('y', y + textSize / 2 - 5)
+        .style('font-family', style('donutFont'))
+        .style('font-size', textSize)
+        .style('text-anchor', 'middle')
+        .style('fill', '#000000')
+        .text(pct + '%');
+
+    return [circlePath, arcPath, headline];
+}
+
+function donutChangeData(svg, donut, pct, attributes) {
+    var duration = get(attributes, 'donutChangeDuration', style('transitionTime'));
+    var arcPath = donut[1];
+    var headline = donut[2];
+    var r = parseFloat(arcPath.attr('data-r'));
+    var size = parseFloat(arcPath.attr('data-size'));
+
+    var arc = d3.arc()
+        .innerRadius((1 - size) * r)
+        .outerRadius(r)
+        .startAngle(0);
+    
+    // computes transition angles during the movement
+    // adapted from http://bl.ocks.org/mbostock/5100636
+    function arcTween(newAngle) {
+        return function(d) {
+            var interpolate = d3.interpolate(d.endAngle, newAngle);
+            return function(t) {
+                d.endAngle = interpolate(t);
+                return arc(d);
+            }
+        }
+    }
+
+    arcPath.transition()
+        .duration(duration)
+        .attrTween('d', arcTween((pct / 100) * (2 * Math.PI)),
+                (1 - size) * r, r);
+
+    headline.transition()
+        .duration(duration)
+        .text(pct + '%');
+}
+
+function createDynamicDonut(selector, svg, data, width, attributes) {
+    var padding = style('padding');
+    var radius = (width / 2) - padding;
+    var cx = padding + radius;
+    var cy = padding + radius;
+    
+    // draw the donut graph
+    var donut = createDonut(svg, cx, cy, radius, 0, attributes);
+
+    function transitionTo(selection) {
+        index = null;
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]['name'] == selection) {
+                index = i;
+                break;
+            }
+        }
+        donutChangeData(svg, donut, data[index]['value'], attributes);
+    }
+
+    d3.select(selector).on('change', function() {
+        var selection = d3.select(selector).node().value;
+        transitionTo(selection);
+    });
+
+    transitionTo(data[0]["name"]);
+    return donut;
+}
+
 /****************************
   * Stylesheet
   ***************************/
@@ -824,6 +933,7 @@ stylesheet['textFontSans'] = stylesheet['lato'];
 stylesheet['axisFont'] = stylesheet['merriweather'];
 stylesheet['headlineFont'] = stylesheet['merriweather'];
 stylesheet['tooltipFont'] = stylesheet['lato'];
+stylesheet['donutFont'] = stylesheet['lato'];
 
 // base colors
 stylesheet['black'] = '#000000';
@@ -845,6 +955,8 @@ stylesheet['pointColor'] = stylesheet['black'];
 stylesheet['gridlineColor'] = stylesheet['grey1'];
 stylesheet['tooltipColor'] = stylesheet['grey2'];
 stylesheet['personColor'] = stylesheet['red'];
+stylesheet['donutColor'] = stylesheet['red'];
+stylesheet['donutBgColor'] = stylesheet['grey1'];
 
 // other configuration settings
 stylesheet['lineGraphDrawPoints'] = true;
@@ -854,6 +966,7 @@ stylesheet['lineGraphGridlinesX'] = false;
 stylesheet['barGraphGridlines'] = true;
 stylesheet['tooltipAlign'] = 'center';
 stylesheet['showTooltips'] = true;
+stylesheet['transitionTime'] = 1000;
 
 // gets the styling for a particular attribute, using defaults if nothing overriden
 function style(attribute) {
@@ -912,6 +1025,10 @@ function px(x) {
 
 function pxtonum(x) {
     return parseInt(x.substring(0, x.length - 2));
+}
+
+function translateBy(x, y) {
+    return 'translate(' + x + ',' + y + ')';
 }
 
 // line function

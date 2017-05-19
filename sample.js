@@ -92,3 +92,35 @@ function sampleMultiBarGraph() {
     var person = drawPerson(svg, 50, 50, 100, {});
     movePerson(svg, person, 100, 100, 1000, {"personColor": "#0000ff"});
 }
+
+function sampleDonut() {
+    var svg = createSVG('#graphic-area', 'infographic', 600, 600, 10);
+    var donut = createDonut(svg, 100, 100, 50, 50, {});
+    donutChangeData(svg, donut, 90, {});
+}
+
+function sampleMovingDonut() {
+    var data = [
+        {
+            "name": "Category A",
+            "value": 25
+        },
+        {
+            "name": "Category B",
+            "value": 90
+        },
+        {
+            "name": "Category C",
+            "value": 50
+        }
+    ];
+    var chooser = '<select id="donut-chooser"> \
+                  <option>Category A</option> \
+                  <option>Category B</option> \
+                  <option>Category C</option> \
+                  </select><br/>';
+    var area = document.getElementById('graphic-area');
+    area.innerHTML = area.innerHTML + chooser;
+    var svg = createSVG('#graphic-area', 'infographic', 300, 300, 10);
+    var donut = createDynamicDonut('#donut-chooser', svg, data, 300, {});
+}
