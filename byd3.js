@@ -500,86 +500,6 @@ function addHeadline(identifier, width, text) {
 }
 
 /****************************
-  * Stylesheet
-  ***************************/
-
-// default stylesheet for byd3
-var stylesheet = {}
-
-// spacing
-stylesheet['padding'] = 10;
-stylesheet['headlinePadding'] = 10;
-stylesheet['tooltipPadding'] = 5;
-stylesheet['multiBarPadding'] = 0.2;
-
-// text sizes
-stylesheet['textFontSize'] = 12;
-stylesheet['axisFontSize'] = 12;
-stylesheet['headlineFontSize'] = 24;
-
-// other sizes
-stylesheet['lineGraphLineWidth'] = 2;
-stylesheet['lineGraphAxisWidth'] = 2;
-stylesheet['barSize'] = 0.5;
-stylesheet['pointRadius'] = 4;
-stylesheet['innerPointRadius'] = 2; // size of inner hollow point for line graphs
-stylesheet['tooltipBorderRadius'] = 4;
-stylesheet['tooltipWidth'] = 100;
-
-// base fonts
-stylesheet['slab'] = '"Roboto Slab", serif';
-stylesheet['merriweather'] = '"Merriweather", serif';
-stylesheet['lato'] = '"Lato", sans-serif';
-stylesheet['noto'] = '"Noto Sans", sans-serif';
-
-// font choices
-stylesheet['mainFont'] = stylesheet['merriweather'];
-stylesheet['textFontSerif'] = stylesheet['merriweather'];
-stylesheet['textFontSans'] = stylesheet['lato'];
-stylesheet['axisFont'] = stylesheet['merriweather'];
-stylesheet['headlineFont'] = stylesheet['merriweather'];
-stylesheet['tooltipFont'] = stylesheet['lato'];
-
-// base colors
-stylesheet['black'] = '#000000';
-stylesheet['white'] = '#ffffff';
-stylesheet['red'] = '#a82931';
-stylesheet['blue1'] = '#004e6a';
-stylesheet['blue2'] = '#7799b7';
-stylesheet['blue3'] = '#b0cfe7';
-stylesheet['green'] = '#298848';
-stylesheet['yellow'] = '#dbd300';
-stylesheet['grey1'] = '#9b9b9b';
-stylesheet['grey2'] = '#c0c0c0';
-
-// color choices
-stylesheet['lineColor'] = stylesheet['black'];
-stylesheet['axisColor'] = stylesheet['black'];
-stylesheet['barColor'] = stylesheet['red'];
-stylesheet['pointColor'] = stylesheet['black'];
-stylesheet['gridlineColor'] = stylesheet['grey1'];
-stylesheet['tooltipColor'] = stylesheet['grey2'];
-stylesheet['personColor'] = stylesheet['red'];
-
-// other configuration settings
-stylesheet['lineGraphDrawPoints'] = true;
-stylesheet['pointsHollowCenter'] = false; // give line graph points hollow middle
-stylesheet['lineGraphGridlinesY'] = true;
-stylesheet['lineGraphGridlinesX'] = false;
-stylesheet['barGraphGridlines'] = true;
-stylesheet['tooltipAlign'] = 'center';
-stylesheet['showTooltips'] = true;
-
-// gets the styling for a particular attribute, using defaults if nothing overriden
-function style(attribute) {
-    if (window.stylesheetOverride && attribute in stylesheetOverride) {
-        return stylesheetOverride[attribute];
-    } else {
-        return stylesheet[attribute];
-    }
-}
-
-/****************************
   * Other Graphics Features
   ***************************/
 
@@ -758,6 +678,159 @@ function createPersonClusterGraph(selector, svg, data, numPeople, width, height)
     transitionTo(data[0]["name"]);
 };
 
+
+/****************************
+  * Other Graphics
+  ***************************/
+
+// creates a rating chart
+// selector is the name of the select dropdown
+// data is an array of dictionaries, each being a selected category
+//  each category has a 'name' which is the value of the selector
+//  each category also has data, an array of dictionaries
+//      each dictionary has a 'name', 'color', and 'value' (0-100)
+function createRatingChart(selector, svg, data, width, height) {
+
+    var padding = style('padding');
+    var x = padding;
+    var y = padding;
+    var barWidth = width - 2 * padding;
+    var barHeight = height - 2 * padding;
+    
+    var initialData = data[0]['data'];
+    var bars = [];
+    for (var i = 0; i < initialData.length; i++) {
+        var bar = svg.append('rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', 0)
+            .attr('height', 0);
+        bars.push(bar);
+    }
+
+    var transitionTime = 0;
+
+    function transitionTo(selection) {
+
+        // get the selected choice
+        var index = null;
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]['name'] == selection) {
+                index = i;
+                break;
+            }
+        }
+
+        // draw the bars
+        var dist = 0;
+        var selectedData = data[i]['data'];
+        for (var i = 0; i < selectedData.length; i++) {
+            var thisWidth = (selectedData[i]['value'] / 100) * barWidth;
+            bars[i].transition()
+                .duration(transitionTime)
+                .attr('x', x + dist)
+                .attr('y', y)
+                .attr('width', thisWidth)
+                .attr('height', barHeight)
+                .attr('fill', selectedData[i]['color']);
+            dist += thisWidth;
+            
+            var tooltipContents = selectedData[i]['name'] + '<br/>'
+                + selectedData[i]['value'] + '%';
+            addTooltipToPoint(svg, bars[i], tooltipContents, {});
+        }
+    }
+
+    transitionTo("Primal Scream");
+    
+    // update when something is selected
+    d3.select(selector).on('change', function() {
+        var selection = d3.select(selector).node().value;
+        transitionTo(selection);
+    });
+
+    transitionTime = 1000;
+}
+
+/****************************
+  * Stylesheet
+  ***************************/
+
+// default stylesheet for byd3
+var stylesheet = {}
+
+// spacing
+stylesheet['padding'] = 10;
+stylesheet['headlinePadding'] = 10;
+stylesheet['tooltipPadding'] = 5;
+stylesheet['multiBarPadding'] = 0.2;
+
+// text sizes
+stylesheet['textFontSize'] = 12;
+stylesheet['axisFontSize'] = 12;
+stylesheet['headlineFontSize'] = 24;
+
+// other sizes
+stylesheet['lineGraphLineWidth'] = 2;
+stylesheet['lineGraphAxisWidth'] = 2;
+stylesheet['barSize'] = 0.5;
+stylesheet['pointRadius'] = 4;
+stylesheet['innerPointRadius'] = 2; // size of inner hollow point for line graphs
+stylesheet['tooltipBorderRadius'] = 4;
+stylesheet['tooltipWidth'] = 100;
+
+// base fonts
+stylesheet['slab'] = '"Roboto Slab", serif';
+stylesheet['merriweather'] = '"Merriweather", serif';
+stylesheet['lato'] = '"Lato", sans-serif';
+stylesheet['noto'] = '"Noto Sans", sans-serif';
+
+// font choices
+stylesheet['mainFont'] = stylesheet['merriweather'];
+stylesheet['textFontSerif'] = stylesheet['merriweather'];
+stylesheet['textFontSans'] = stylesheet['lato'];
+stylesheet['axisFont'] = stylesheet['merriweather'];
+stylesheet['headlineFont'] = stylesheet['merriweather'];
+stylesheet['tooltipFont'] = stylesheet['lato'];
+
+// base colors
+stylesheet['black'] = '#000000';
+stylesheet['white'] = '#ffffff';
+stylesheet['red'] = '#a82931';
+stylesheet['blue1'] = '#004e6a';
+stylesheet['blue2'] = '#7799b7';
+stylesheet['blue3'] = '#b0cfe7';
+stylesheet['green'] = '#298848';
+stylesheet['yellow'] = '#dbd300';
+stylesheet['grey1'] = '#9b9b9b';
+stylesheet['grey2'] = '#c0c0c0';
+
+// color choices
+stylesheet['lineColor'] = stylesheet['black'];
+stylesheet['axisColor'] = stylesheet['black'];
+stylesheet['barColor'] = stylesheet['red'];
+stylesheet['pointColor'] = stylesheet['black'];
+stylesheet['gridlineColor'] = stylesheet['grey1'];
+stylesheet['tooltipColor'] = stylesheet['grey2'];
+stylesheet['personColor'] = stylesheet['red'];
+
+// other configuration settings
+stylesheet['lineGraphDrawPoints'] = true;
+stylesheet['pointsHollowCenter'] = false; // give line graph points hollow middle
+stylesheet['lineGraphGridlinesY'] = true;
+stylesheet['lineGraphGridlinesX'] = false;
+stylesheet['barGraphGridlines'] = true;
+stylesheet['tooltipAlign'] = 'center';
+stylesheet['showTooltips'] = true;
+
+// gets the styling for a particular attribute, using defaults if nothing overriden
+function style(attribute) {
+    if (window.stylesheetOverride && attribute in stylesheetOverride) {
+        return stylesheetOverride[attribute];
+    } else {
+        return stylesheet[attribute];
+    }
+}
 
 /****************************
   * Helper Functions
