@@ -505,6 +505,7 @@ function addTooltipsToPoints(svg, points, data, attributes) {
 
 function addHeadline(identifier, width, text) {
     var headline = d3.select(identifier).append('div')
+        .attr('class', 'infographic-headline')
         .style('width', px(width))
         .style('padding', px(style('headlinePadding')))
         .style('text-align', 'center')
