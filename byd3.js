@@ -746,7 +746,7 @@ function createRatingChart(selector, svg, data, width, height) {
         }
     }
 
-    transitionTo("Primal Scream");
+    transitionTo(data[0]['name']);
     
     // update when something is selected
     d3.select(selector).on('change', function() {
