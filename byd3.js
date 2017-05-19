@@ -102,6 +102,7 @@ function drawLineGraph(svg, coords, data, xAttrs, yAttrs, attributes) {
 // draws a bar graph
 // bar graph size should be in range (0, 1)
 function drawBarGraph(svg, coords, data, yAttrs, attributes) {
+    var barSize = get(attributes, 'barSize', style('barSize'));
 
     // compute the axes
     var xData = data.map(function(elt) { return elt[0]; });
@@ -109,7 +110,7 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
         xData, // domain, possible x values
         [coords['x'], coords['x'] + coords['width']], // range, coordinate locations
         coords['axisPadding']); // padding
-    xAxis.scale().padding(1 - style('barSize'));
+    xAxis.scale().padding(1 - barSize);
     var yAxis = createLinearAxisY(
             [yAttrs['min'], yAttrs['max']], // domain, possible y values
             [coords['y'] + coords['height'], coords['y']], // range, coordinate locations
@@ -136,8 +137,12 @@ function drawBarGraph(svg, coords, data, yAttrs, attributes) {
                     - coords['axisPadding'] - yAxis.scale()(data[i][1]))
             .style('fill', barColor);
 
-        if (style('showTooltips'))
-            addTooltipToPoint(svg, bar, data[i][1], attributes);
+        if (style('showTooltips')) {
+            var contents = data[i][1];
+            if ('tooltipFunction' in attributes)
+                contents = attributes['tooltipFunction'](data[i]);
+            addTooltipToPoint(svg, bar, contents, attributes);
+        }
     }
 
     return [xAxis, yAxis];
