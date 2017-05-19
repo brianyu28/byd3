@@ -470,7 +470,9 @@ function addTooltipToPoint(svg, point, contents, attributes) {
     point.on('mouseover', createTooltipAtCursor)
         .on('mousemove', createTooltipAtCursor)
         .on('click', createTooltipAtCursor)
-        .on('mouseout', eraseTooltip);
+        .on('mouseout', function() {
+            eraseTooltip(svg);
+        });
 }
 
 function addTooltipsToPoints(svg, points, data, attributes) {
