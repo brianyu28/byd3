@@ -740,11 +740,17 @@ function createRatingChart(selector, svg, data, width, height) {
             }
         }
 
-        // draw the bars
         var dist = 0;
         var selectedData = data[i]['data'];
+
+        // compute the total value
+        var total = 0;
+        for (var i = 0; i < selectedData.length; i++)
+            total += selectedData[i]['value'];
+
+        // draw the bars
         for (var i = 0; i < selectedData.length; i++) {
-            var thisWidth = (selectedData[i]['value'] / 100) * barWidth;
+            var thisWidth = (selectedData[i]['value'] / total) * barWidth;
             bars[i].transition()
                 .duration(transitionTime)
                 .attr('x', x + dist)
