@@ -649,15 +649,18 @@ function movePerson(svg, person, x, y, duration, attributes) {
 //      'value' for the number of people, 'gridLoc' [x, y] for the origin of the grid of people,
 //      'gridRows' and 'gridCols' to define the dimensions of the grid
 // numPeople defines the number of people to draw
-function createPersonClusterGraph(selector, svg, data, numPeople) {
+// width and height define the canvas size
+function createPersonClusterGraph(selector, svg, data, numPeople, width, height) {
     
-    var personHeight = 40;
-    var personWidth = 14;
+    var personHeight = width / 15;
+    var personWidth = Math.ceil(personHeight / 3);
+    var personPadding = height / 120;
+
     var people = [];
     var labels = []; // visible, but disappear on transition
     // draw all the data of screen  
     for (var i = 0; i < numPeople; i++) {
-        var person = drawPerson(svg, -50, -50, personHeight, {});
+        var person = drawPerson(svg, - (2 * personWidth), - (2 * personHeight), personHeight, {});
         people.push(person);
     }
 
@@ -689,8 +692,8 @@ function createPersonClusterGraph(selector, svg, data, numPeople) {
         // go through that selection's data
         var selectionData = data[index]['data']
         for (var i = 0; i < selectionData.length; i++) {
-            var x = selectionData[i]['gridLoc'][0];
-            var y = selectionData[i]['gridLoc'][1];
+            var x = selectionData[i]['gridLoc'][0] * width;
+            var y = selectionData[i]['gridLoc'][1] * height;
 
             // move all of the people into place
             for (var j = 0; j < selectionData[i]['gridRows']; j++) {
@@ -705,17 +708,18 @@ function createPersonClusterGraph(selector, svg, data, numPeople) {
                     personIndex++;
                     x += personWidth;
                 }
-                x = selectionData[i]['gridLoc'][0];
-                y += personHeight + 5;
+                x = selectionData[i]['gridLoc'][0] * width;
+                y += personHeight + personPadding;
             }
 
             // print the text
+            var labelScale = d3.scaleLinear().domain([200, 700]).range([12, 24]);
             if (selectionData[i]['location'].length !== 0) {
                 var name = svg.append('text')
-                    .attr('x', selectionData[i]['location'][0])
-                    .attr('y', selectionData[i]['location'][1])
+                    .attr('x', selectionData[i]['location'][0] * width)
+                    .attr('y', selectionData[i]['location'][1] * height)
                     .style('font-family', style('textFontSans'))
-                    .style('font-size', 24)
+                    .style('font-size', labelScale(width))
                     .style('fill', selectionData[i]['color'])
                     .style('opacity', 0)
                     .text(selectionData[i]['name']);
@@ -726,12 +730,13 @@ function createPersonClusterGraph(selector, svg, data, numPeople) {
             }
 
             // show the percentage
+            var pctScale = d3.scaleLinear().domain([200, 700]).range([24, 60])
             if (selectionData[i]['pctLoc'].length !== 0) {
                 var percent = svg.append('text')
-                    .attr('x', selectionData[i]['pctLoc'][0])
-                    .attr('y', selectionData[i]['pctLoc'][1])
+                    .attr('x', selectionData[i]['pctLoc'][0] * width)
+                    .attr('y', selectionData[i]['pctLoc'][1] * height)
                     .style('font-family', style('textFontSans'))
-                    .style('font-size', 60)
+                    .style('font-size', pctScale(width))
                     .style('fill', selectionData[i]['color'])
                     .style('opacity', 0)
                     .text(selectionData[i]['value'] + '%');
@@ -743,7 +748,8 @@ function createPersonClusterGraph(selector, svg, data, numPeople) {
         }
 
         while (personIndex < numPeople) {
-            movePerson(svg, people[personIndex], -200, -200, 1000, {});
+            movePerson(svg, people[personIndex],
+                    -(2 * personWidth), -(2 * personHeight), 1000, {});
             personIndex++;
         }
 
@@ -751,6 +757,11 @@ function createPersonClusterGraph(selector, svg, data, numPeople) {
     }
     transitionTo(data[0]["name"]);
 };
+
+
+/****************************
+  * Helper Functions
+  ***************************/
 
 // shuffles an array
 // source: http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
@@ -773,9 +784,13 @@ function shuffle(array) {
   return array;
 }
 
-/****************************
-  * Helper Functions
-  ***************************/
+function max(x, y) {
+    return (x > y) ? x : y;
+}
+
+function min(x, y) {
+    return (x < y) ? x : y;
+}
 
 // gets an element from associative array, or goes to default
 function get(arr, elt, def) {
