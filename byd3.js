@@ -583,7 +583,8 @@ function movePerson(svg, person, x, y, duration, attributes) {
 //      'gridRows' and 'gridCols' to define the dimensions of the grid
 // numPeople defines the number of people to draw
 // width and height define the canvas size
-function createPersonClusterGraph(selector, svg, data, numPeople, width, height) {
+function createPersonClusterGraph(selector, svg, data, numPeople, width, height, attributes) {
+    var randomizePersonShuffle = get(attributes, 'randomizePersonShuffle', true);
     
     var personHeight = width / 15;
     var personWidth = Math.ceil(personHeight / 3);
@@ -609,8 +610,9 @@ function createPersonClusterGraph(selector, svg, data, numPeople, width, height)
             labels[i].remove();
         }
         labels = [];
-
-        people = shuffle(people);
+    
+        if (randomizePersonShuffle)
+            people = shuffle(people);
         var personIndex = 0; // number of people already sorted
 
         // find index of selection
