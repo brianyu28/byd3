@@ -424,14 +424,22 @@ function drawPoint(svg, x, y, attributes) {
 function createTooltip(svg, x, y, width, html, attributes) {
     var color = get(attributes, 'tooltipColor', style('tooltipColor'));
     var talign = get(attributes, 'tooltipAlign', style('tooltipAlign'));
+
+    // determines if should erase all previous tooltips
+    var shouldEraseTooltip = get(attributes, 'eraseTooltip', true);
+
+    // should adjust for edge of screen
+    var realign = get(attributes, 'realignTooltip', true);
     
     // compute if should go right or left
     var toRight = x < (pxtonum(svg.style('width')) / 2);
 
     // make sure that tooltip faces the inside of svg
-    if (!toRight)
+    if (!toRight && realign)
         x -= width;
-    eraseTooltip();
+
+    if (shouldEraseTooltip)
+        eraseTooltip(svg);
     var fo = svg.append('foreignObject')
         .attr('x', x)
         .attr('y', y)
@@ -447,8 +455,8 @@ function createTooltip(svg, x, y, width, html, attributes) {
         .html(html);
 }
 
-function eraseTooltip() {
-    d3.selectAll('.byd3-tooltip').remove();
+function eraseTooltip(svg) {
+    svg.selectAll('.byd3-tooltip').remove();
 }
 
 // adds listener on point to create tooltip when hovered
@@ -735,14 +743,27 @@ function createRatingChart(selector, svg, data, width, height) {
                 .duration(transitionTime)
                 .attr('x', x + dist)
                 .attr('y', y)
+                .attr('data-name', selectedData[i]['name'])
+                .attr('data-value', selectedData[i]['value'])
                 .attr('width', thisWidth)
                 .attr('height', barHeight)
-                .attr('fill', selectedData[i]['color']);
+                .attr('fill', selectedData[i]['color'])
+                .on('end', function() {
+                    var tooltipContents = d3.select(this).attr('data-name')
+                        + '<br/>' + d3.select(this).attr('data-value') + '%';
+
+                    createTooltip(svg,
+                            parseFloat(d3.select(this).attr('x')) + 
+                                d3.select(this).attr('width') / 4,
+                            parseFloat(d3.select(this).attr('y')) + barHeight / 4,
+                            parseFloat(d3.select(this).attr('width')) / 2,
+                            tooltipContents,
+                            {"eraseTooltip": false, "realignTooltip": false,
+                            "tooltipDisplayDelay": transitionTime});
+
+                });
+
             dist += thisWidth;
-            
-            var tooltipContents = selectedData[i]['name'] + '<br/>'
-                + selectedData[i]['value'] + '%';
-            addTooltipToPoint(svg, bars[i], tooltipContents, {});
         }
     }
 
@@ -750,6 +771,7 @@ function createRatingChart(selector, svg, data, width, height) {
     
     // update when something is selected
     d3.select(selector).on('change', function() {
+        eraseTooltip(svg);
         var selection = d3.select(selector).node().value;
         transitionTo(selection);
     });
