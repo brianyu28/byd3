@@ -763,15 +763,16 @@ function createRatingChart(selector, svg, data, width, height) {
                 .on('end', function() {
                     var tooltipContents = d3.select(this).attr('data-name')
                         + '<br/>' + d3.select(this).attr('data-value') + '%';
-
-                    createTooltip(svg,
-                            parseFloat(d3.select(this).attr('x')) + 
-                                d3.select(this).attr('width') / 4,
-                            parseFloat(d3.select(this).attr('y')) + barHeight / 4,
-                            parseFloat(d3.select(this).attr('width')) / 2,
-                            tooltipContents,
-                            {"eraseTooltip": false, "realignTooltip": false,
-                            "tooltipDisplayDelay": transitionTime});
+                    
+                    if (d3.select(this).attr('data-name').length > 0)
+                        createTooltip(svg,
+                                parseFloat(d3.select(this).attr('x')) + 
+                                    d3.select(this).attr('width') / 4,
+                                parseFloat(d3.select(this).attr('y')) + barHeight / 4,
+                                parseFloat(d3.select(this).attr('width')) / 2,
+                                tooltipContents,
+                                {"eraseTooltip": false, "realignTooltip": false,
+                                "tooltipDisplayDelay": transitionTime});
 
                 });
 
@@ -890,8 +891,10 @@ function createDynamicDonut(selector, svg, data, width, attributes) {
         }
         donutChangeData(svg, donut, data[index]['value'], attributes);
     }
-
-    d3.select(selector).on('change', function() {
+    
+    // allow multiple donuts to bind to the same selector
+    var eventName = 'eventName' in attributes ? 'change.' + attributes['eventName'] : 'change';
+    d3.select(selector).on(eventName, function() {
         var selection = d3.select(selector).node().value;
         transitionTo(selection);
     });
